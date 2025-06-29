@@ -1,10 +1,10 @@
-import React, {useState, useEffect} from 'react'
-import {motion} from 'framer-motion'
+import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import * as FiIcons from 'react-icons/fi'
 import SafeIcon from '../../common/SafeIcon'
 import supabase from '../../lib/supabase'
 
-const {FiPlus, FiEdit2, FiTrash2, FiExternalLink, FiSearch, FiFilter, FiEye, FiMousePointer, FiSave, FiX, FiTag, FiList, FiMove, FiCreditCard, FiRefreshCw} = FiIcons
+const { FiPlus, FiEdit2, FiTrash2, FiExternalLink, FiSearch, FiFilter, FiEye, FiMousePointer, FiSave, FiX, FiTag, FiList, FiMove, FiCreditCard, FiRefreshCw } = FiIcons
 
 const WebshopManager = () => {
   const [webshops, setWebshops] = useState([])
@@ -20,24 +20,35 @@ const WebshopManager = () => {
     logo_url: '',
     website_url: '',
     trustpilot_url: '',
-    categories: [], // This will store array of category slugs
+    categories: [],
     emaerket: false,
     tryghedsmaerket: false,
-    mobilepay_accepted: false, // New field for MobilePay
-    danish_based: false,
+    mobilepay_accepted: false,
+    country: 'denmark',
     discount_text: '',
     featured: false,
     status: 'active',
     sort_order: 0,
-    // New USP fields
     usp_items: [''],
-    // Enhanced headline fields
     headline_text: '',
     headline_active: false,
-    headline_color: '#ff0000',
-    headline_bg_color: '#ffffff',
-    headline_speed: 10 // seconds for one cycle
+    headline_color: '#ffffff',
+    headline_bg_color: '#ff0000',
+    headline_speed: 10
   })
+
+  // Updated categories list with "Rejser og oplevelser"
+  const defaultCategories = [
+    { name: 'Herremode', slug: 'herremode' },
+    { name: 'Damemode', slug: 'damemode' },
+    { name: 'Børn', slug: 'boern' },
+    { name: 'Sport og fritid', slug: 'sport-og-fritid' },
+    { name: 'Hjemmet', slug: 'hjemmet' },
+    { name: 'Elektronik', slug: 'elektronik' },
+    { name: 'Voksen', slug: 'voksen' },
+    { name: 'Mad og drikke', slug: 'mad-og-drikke' },
+    { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser' }
+  ]
 
   useEffect(() => {
     fetchWebshops()
@@ -46,10 +57,10 @@ const WebshopManager = () => {
 
   const fetchWebshops = async () => {
     try {
-      const {data, error} = await supabase
+      const { data, error } = await supabase
         .from('webshops_dk847392')
         .select('*')
-        .order('sort_order', {ascending: true})
+        .order('sort_order', { ascending: true })
 
       if (!error) {
         setWebshops(data || [])
@@ -65,17 +76,22 @@ const WebshopManager = () => {
 
   const fetchCategories = async () => {
     try {
-      const {data, error} = await supabase
+      const { data, error } = await supabase
         .from('categories_dk847392')
         .select('name, slug')
         .eq('status', 'active')
         .order('sort_order')
 
-      if (!error) {
-        setCategories(data || [])
+      if (!error && data && data.length > 0) {
+        setCategories(data)
+      } else {
+        // Use default categories if none found in database
+        setCategories(defaultCategories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
+      // Use default categories on error
+      setCategories(defaultCategories)
     }
   }
 
@@ -84,7 +100,7 @@ const WebshopManager = () => {
     return name
       .toLowerCase()
       .replace(/[æøå]/g, (match) => {
-        const map = {'æ': 'ae', 'ø': 'oe', 'å': 'aa'}
+        const map = { 'æ': 'ae', 'ø': 'oe', 'å': 'aa' }
         return map[match]
       })
       .replace(/[^a-z0-9]+/g, '-')
@@ -99,7 +115,7 @@ const WebshopManager = () => {
       // Prepare webshop data - ensure categories is always an array
       const webshopData = {
         name: formData.name,
-        slug: generateSlug(formData.name), // Auto-generate slug from name
+        slug: generateSlug(formData.name),
         description: formData.description,
         logo_url: formData.logo_url,
         website_url: formData.website_url,
@@ -107,8 +123,11 @@ const WebshopManager = () => {
         categories: Array.isArray(formData.categories) ? formData.categories : [],
         emaerket: formData.emaerket,
         tryghedsmaerket: formData.tryghedsmaerket,
-        mobilepay_accepted: formData.mobilepay_accepted, // Include MobilePay field
-        danish_based: formData.danish_based,
+        mobilepay_accepted: formData.mobilepay_accepted,
+        // Only include country if it exists in schema, otherwise use danish_based
+        ...(formData.country && { country: formData.country }),
+        // Legacy support - always set danish_based for backward compatibility
+        danish_based: formData.country === 'denmark',
         discount_text: formData.discount_text,
         featured: formData.featured,
         status: formData.status,
@@ -117,9 +136,8 @@ const WebshopManager = () => {
         headline_text: formData.headline_text,
         headline_active: formData.headline_active,
         headline_color: formData.headline_color,
-        // Only include these if they exist in the database schema
-        ...(formData.headline_bg_color && {headline_bg_color: formData.headline_bg_color}),
-        ...(formData.headline_speed && {headline_speed: formData.headline_speed}),
+        headline_bg_color: formData.headline_bg_color,
+        headline_speed: formData.headline_speed,
         updated_at: new Date().toISOString()
       }
 
@@ -127,7 +145,7 @@ const WebshopManager = () => {
 
       if (editingWebshop) {
         // Update existing webshop
-        const {error} = await supabase
+        const { error } = await supabase
           .from('webshops_dk847392')
           .update(webshopData)
           .eq('id', editingWebshop.id)
@@ -136,29 +154,29 @@ const WebshopManager = () => {
           await fetchWebshops()
           setShowModal(false)
           setEditingWebshop(null)
-          alert('Webshop opdateret succesfuldt!')
+          // Removed browser alert
         } else {
           console.error('Update error:', error)
-          alert('Fejl ved opdatering af webshop: ' + error.message)
+          // Removed browser alert
         }
       } else {
         // Create new webshop
-        const {error} = await supabase
+        const { error } = await supabase
           .from('webshops_dk847392')
           .insert([webshopData])
 
         if (!error) {
           await fetchWebshops()
           setShowModal(false)
-          alert('Webshop oprettet succesfuldt!')
+          // Removed browser alert
         } else {
           console.error('Insert error:', error)
-          alert('Fejl ved oprettelse af webshop: ' + error.message)
+          // Removed browser alert
         }
       }
     } catch (error) {
       console.error('Error saving webshop:', error)
-      alert('Uventet fejl ved gemning af webshop: ' + error.message)
+      // Removed browser alert
     } finally {
       setLoading(false)
       resetForm()
@@ -176,15 +194,16 @@ const WebshopManager = () => {
       categories: Array.isArray(webshop.categories) ? webshop.categories : [],
       emaerket: webshop.emaerket,
       tryghedsmaerket: webshop.tryghedsmaerket,
-      mobilepay_accepted: webshop.mobilepay_accepted || false, // Load MobilePay field
-      danish_based: webshop.danish_based,
+      mobilepay_accepted: webshop.mobilepay_accepted || false,
+      // Load country field or derive from legacy danish_based
+      country: webshop.country || (webshop.danish_based ? 'denmark' : 'denmark'),
       discount_text: webshop.discount_text || '',
       featured: webshop.featured,
       status: webshop.status,
       sort_order: webshop.sort_order || 0,
       // Load USP items or default
       usp_items: webshop.usp_items && Array.isArray(webshop.usp_items) ? webshop.usp_items : [''],
-      // Load headline data with new fields
+      // Load headline data
       headline_text: webshop.headline_text || '',
       headline_active: webshop.headline_active || false,
       headline_color: webshop.headline_color || '#ffffff',
@@ -195,23 +214,22 @@ const WebshopManager = () => {
   }
 
   const handleDelete = async (id) => {
-    if (confirm('Er du sikker på, at du vil slette denne webshop?')) {
-      try {
-        const {error} = await supabase
-          .from('webshops_dk847392')
-          .delete()
-          .eq('id', id)
+    // Removed browser confirm dialog
+    try {
+      const { error } = await supabase
+        .from('webshops_dk847392')
+        .delete()
+        .eq('id', id)
 
-        if (!error) {
-          await fetchWebshops()
-          alert('Webshop slettet succesfuldt!')
-        } else {
-          alert('Fejl ved sletning af webshop: ' + error.message)
-        }
-      } catch (error) {
-        console.error('Error deleting webshop:', error)
-        alert('Uventet fejl ved sletning af webshop')
+      if (!error) {
+        await fetchWebshops()
+        // Removed browser alert
+      } else {
+        // Removed browser alert
       }
+    } catch (error) {
+      console.error('Error deleting webshop:', error)
+      // Removed browser alert
     }
   }
 
@@ -225,8 +243,8 @@ const WebshopManager = () => {
       categories: [],
       emaerket: false,
       tryghedsmaerket: false,
-      mobilepay_accepted: false, // Reset MobilePay field
-      danish_based: false,
+      mobilepay_accepted: false,
+      country: 'denmark',
       discount_text: '',
       featured: false,
       status: 'active',
@@ -240,54 +258,20 @@ const WebshopManager = () => {
     })
   }
 
-  // Force schema refresh function
-  const forceSchemaRefresh = async () => {
-    try {
-      console.log('🔄 Attempting schema refresh...')
-      
-      // First, try to check if columns exist
-      const {data: columnCheck, error: columnError} = await supabase
-        .rpc('check_column_exists', {
-          table_name: 'webshops_dk847392',
-          column_name: 'headline_bg_color'
-        })
-        .single()
-
-      console.log('Column check result:', {columnCheck, columnError})
-
-      // Force a simple query to refresh schema
-      const {data, error} = await supabase
-        .from('webshops_dk847392')
-        .select('id, name, headline_bg_color, headline_speed')
-        .limit(1)
-      
-      console.log('✅ Schema refresh completed:', {data, error})
-      
-      if (error) {
-        alert('⚠️ Schema refresh completed, but columns may not exist. Please run the SQL script in Supabase first.')
-      } else {
-        alert('✅ Schema refresh successful! Try editing a webshop now.')
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing schema:', error)
-      alert('Schema refresh attempt completed. If issues persist, run the SQL script in Supabase.')
-    }
-  }
-
   // USP Management Functions
   const addUSPItem = () => {
-    setFormData({...formData, usp_items: [...formData.usp_items, '']})
+    setFormData({ ...formData, usp_items: [...formData.usp_items, ''] })
   }
 
   const removeUSPItem = (index) => {
     const newUSPItems = formData.usp_items.filter((_, i) => i !== index)
-    setFormData({...formData, usp_items: newUSPItems.length > 0 ? newUSPItems : ['']})
+    setFormData({ ...formData, usp_items: newUSPItems.length > 0 ? newUSPItems : [''] })
   }
 
   const updateUSPItem = (index, value) => {
     const newUSPItems = [...formData.usp_items]
     newUSPItems[index] = value
-    setFormData({...formData, usp_items: newUSPItems})
+    setFormData({ ...formData, usp_items: newUSPItems })
   }
 
   // Category management functions
@@ -302,14 +286,65 @@ const WebshopManager = () => {
       newCategories = newCategories.filter(cat => cat !== categorySlug)
     }
     
-    setFormData({...formData, categories: newCategories})
+    setFormData({ ...formData, categories: newCategories })
+  }
+
+  // Get country flag component
+  const getCountryFlag = (country) => {
+    switch (country) {
+      case 'denmark':
+        return (
+          <div className="w-5 h-4 rounded-sm overflow-hidden" title="Dansk webshop">
+            <svg viewBox="0 0 37 28" className="w-full h-full">
+              <rect width="37" height="28" fill="#c8102e" />
+              <rect x="12" y="0" width="4" height="28" fill="white" />
+              <rect x="0" y="12" width="37" height="4" fill="white" />
+            </svg>
+          </div>
+        )
+      case 'norway':
+        return (
+          <div className="w-5 h-4 rounded-sm overflow-hidden" title="Norsk webshop">
+            <svg viewBox="0 0 37 28" className="w-full h-full">
+              <rect width="37" height="28" fill="#ef2b2d" />
+              <rect x="12" y="0" width="4" height="28" fill="white" />
+              <rect x="0" y="12" width="37" height="4" fill="white" />
+              <rect x="12" y="0" width="2" height="28" fill="#002868" />
+              <rect x="0" y="13" width="37" height="2" fill="#002868" />
+            </svg>
+          </div>
+        )
+      case 'sweden':
+        return (
+          <div className="w-5 h-4 rounded-sm overflow-hidden" title="Svensk webshop">
+            <svg viewBox="0 0 37 28" className="w-full h-full">
+              <rect width="37" height="28" fill="#006aa7" />
+              <rect x="12" y="0" width="4" height="28" fill="#fecc00" />
+              <rect x="0" y="12" width="37" height="4" fill="#fecc00" />
+            </svg>
+          </div>
+        )
+      default:
+        // Legacy support for danish_based field
+        if (country === true || country === 'true') {
+          return (
+            <div className="w-5 h-4 rounded-sm overflow-hidden" title="Dansk webshop">
+              <svg viewBox="0 0 37 28" className="w-full h-full">
+                <rect width="37" height="28" fill="#c8102e" />
+                <rect x="12" y="0" width="4" height="28" fill="white" />
+                <rect x="0" y="12" width="37" height="4" fill="white" />
+              </svg>
+            </div>
+          )
+        }
+        return null
+    }
   }
 
   const filteredWebshops = webshops.filter(webshop => {
     const matchesSearch = webshop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         webshop.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !filterCategory || 
-                           (webshop.categories && webshop.categories.includes(filterCategory))
+                          webshop.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = !filterCategory || (webshop.categories && webshop.categories.includes(filterCategory))
     return matchesSearch && matchesCategory
   })
 
@@ -321,26 +356,15 @@ const WebshopManager = () => {
           <h2 className="text-2xl font-bold text-gray-900">Webshops</h2>
           <p className="text-gray-600">Administrer webshops og deres indhold</p>
         </div>
-        <div className="flex gap-3">
-          <motion.button
-            whileHover={{scale: 1.05}}
-            whileTap={{scale: 0.95}}
-            onClick={forceSchemaRefresh}
-            className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-600 flex items-center gap-2 shadow-md"
-          >
-            <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
-            Refresh Schema
-          </motion.button>
-          <motion.button
-            whileHover={{scale: 1.05}}
-            whileTap={{scale: 0.95}}
-            onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
-          >
-            <SafeIcon icon={FiPlus} className="w-4 h-4" />
-            Tilføj Webshop
-          </motion.button>
-        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+        >
+          <SafeIcon icon={FiPlus} className="w-4 h-4" />
+          Tilføj Webshop
+        </motion.button>
       </div>
 
       {/* Filters */}
@@ -402,12 +426,12 @@ const WebshopManager = () => {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
                         {webshop.logo_url ? (
                           <img
                             src={webshop.logo_url}
                             alt={webshop.name}
-                            className="w-8 h-8 object-contain"
+                            className="w-10 h-10 object-contain"
                           />
                         ) : (
                           <span className="text-gray-500 font-medium">
@@ -416,7 +440,7 @@ const WebshopManager = () => {
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 flex items-center gap-2">
                           <a
                             href={webshop.website_url}
                             target="_blank"
@@ -425,6 +449,7 @@ const WebshopManager = () => {
                           >
                             {webshop.name}
                           </a>
+                          {getCountryFlag(webshop.country || (webshop.danish_based && 'denmark'))}
                         </div>
                         <div className="text-sm text-gray-500">{webshop.slug}</div>
                         {webshop.headline_active && webshop.headline_text && (
@@ -464,11 +489,11 @@ const WebshopManager = () => {
                   <td className="p-4">
                     <div className="flex flex-col gap-1">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        webshop.status === 'active' ? 'bg-green-100 text-green-800' :
-                        webshop.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                        webshop.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
                       }`}>
-                        {webshop.status}
+                        {webshop.status === 'active' ? 'Aktiv' : 'Inaktiv'}
                       </span>
                       <div className="flex gap-1">
                         {webshop.featured && (
@@ -476,7 +501,7 @@ const WebshopManager = () => {
                             Udvalgt
                           </span>
                         )}
-                        {webshop.danish_based && (
+                        {(webshop.country === 'denmark' || webshop.danish_based) && (
                           <span className="bg-red-100 text-red-800 px-1 py-0.5 rounded text-xs">
                             DK
                           </span>
@@ -505,7 +530,7 @@ const WebshopManager = () => {
                           </div>
                         )}
                       </div>
-
+                      
                       {/* USPs */}
                       {webshop.usp_items && Array.isArray(webshop.usp_items) && webshop.usp_items.length > 0 ? (
                         <div className="flex items-center gap-1">
@@ -520,7 +545,7 @@ const WebshopManager = () => {
                           <span className="text-xs text-gray-400">Ingen USPs</span>
                         </div>
                       )}
-
+                      
                       {/* Headline */}
                       {webshop.headline_active && webshop.headline_text ? (
                         <div className="flex items-center gap-1">
@@ -575,8 +600,8 @@ const WebshopManager = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <motion.div
-            initial={{opacity: 0, scale: 0.95}}
-            animate={{opacity: 1, scale: 1}}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6">
@@ -609,7 +634,7 @@ const WebshopManager = () => {
                         type="text"
                         required
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="F.eks. Zalando"
                       />
@@ -625,7 +650,7 @@ const WebshopManager = () => {
                     </label>
                     <textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows="3"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Kort beskrivelse af webshoppet"
@@ -640,7 +665,7 @@ const WebshopManager = () => {
                       <input
                         type="url"
                         value={formData.logo_url}
-                        onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://example.com/logo.png"
                       />
@@ -653,7 +678,7 @@ const WebshopManager = () => {
                         type="url"
                         required
                         value={formData.website_url}
-                        onChange={(e) => setFormData({...formData, website_url: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://example.com"
                       />
@@ -668,7 +693,7 @@ const WebshopManager = () => {
                       <input
                         type="url"
                         value={formData.trustpilot_url}
-                        onChange={(e) => setFormData({...formData, trustpilot_url: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, trustpilot_url: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://dk.trustpilot.com/review/example.com"
                       />
@@ -680,7 +705,7 @@ const WebshopManager = () => {
                       <input
                         type="number"
                         value={formData.sort_order}
-                        onChange={(e) => setFormData({...formData, sort_order: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0"
                       />
@@ -754,7 +779,7 @@ const WebshopManager = () => {
                         type="checkbox"
                         id="headline_active"
                         checked={formData.headline_active}
-                        onChange={(e) => setFormData({...formData, headline_active: e.target.checked})}
+                        onChange={(e) => setFormData({ ...formData, headline_active: e.target.checked })}
                         className="rounded"
                       />
                       <label htmlFor="headline_active" className="text-sm font-medium text-gray-700">
@@ -771,7 +796,7 @@ const WebshopManager = () => {
                           <input
                             type="text"
                             value={formData.headline_text}
-                            onChange={(e) => setFormData({...formData, headline_text: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, headline_text: e.target.value })}
                             placeholder="F.eks. UDSALG 50%, NY WEBSHOP"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
@@ -786,13 +811,13 @@ const WebshopManager = () => {
                               <input
                                 type="color"
                                 value={formData.headline_color}
-                                onChange={(e) => setFormData({...formData, headline_color: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, headline_color: e.target.value })}
                                 className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={formData.headline_color}
-                                onChange={(e) => setFormData({...formData, headline_color: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, headline_color: e.target.value })}
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
@@ -805,13 +830,13 @@ const WebshopManager = () => {
                               <input
                                 type="color"
                                 value={formData.headline_bg_color}
-                                onChange={(e) => setFormData({...formData, headline_bg_color: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, headline_bg_color: e.target.value })}
                                 className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={formData.headline_bg_color}
-                                onChange={(e) => setFormData({...formData, headline_bg_color: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, headline_bg_color: e.target.value })}
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
@@ -825,7 +850,7 @@ const WebshopManager = () => {
                               min="1"
                               max="60"
                               value={formData.headline_speed}
-                              onChange={(e) => setFormData({...formData, headline_speed: parseInt(e.target.value) || 10})}
+                              onChange={(e) => setFormData({ ...formData, headline_speed: parseInt(e.target.value) || 10 })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="10"
                             />
@@ -837,13 +862,13 @@ const WebshopManager = () => {
                         {formData.headline_text && (
                           <div className="p-3 bg-gray-50 rounded-lg">
                             <p className="text-sm text-gray-700 mb-2">Preview:</p>
-                            <div
+                            <div 
                               className="overflow-hidden rounded-md"
-                              style={{backgroundColor: formData.headline_bg_color}}
+                              style={{ backgroundColor: formData.headline_bg_color }}
                             >
-                              <div
+                              <div 
                                 className="text-xs px-2 py-1 font-medium whitespace-nowrap animate-marquee"
-                                style={{
+                                style={{ 
                                   color: formData.headline_color,
                                   animation: `marquee ${formData.headline_speed}s linear infinite`
                                 }}
@@ -869,21 +894,21 @@ const WebshopManager = () => {
                       <input
                         type="text"
                         value={formData.discount_text}
-                        onChange={(e) => setFormData({...formData, discount_text: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, discount_text: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="F.eks. Fri fragt over 500 kr"
                       />
                     </div>
                   </div>
 
-                  {/* Checkboxes */}
+                  {/* Checkboxes and Dropdowns */}
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.emaerket}
-                          onChange={(e) => setFormData({...formData, emaerket: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, emaerket: e.target.checked })}
                           className="mr-2"
                         />
                         e-mærket certificeret
@@ -892,7 +917,7 @@ const WebshopManager = () => {
                         <input
                           type="checkbox"
                           checked={formData.tryghedsmaerket}
-                          onChange={(e) => setFormData({...formData, tryghedsmaerket: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, tryghedsmaerket: e.target.checked })}
                           className="mr-2"
                         />
                         Tryghedsmærket
@@ -901,28 +926,33 @@ const WebshopManager = () => {
                         <input
                           type="checkbox"
                           checked={formData.mobilepay_accepted}
-                          onChange={(e) => setFormData({...formData, mobilepay_accepted: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, mobilepay_accepted: e.target.checked })}
                           className="mr-2"
                         />
                         <SafeIcon icon={FiCreditCard} className="w-4 h-4 mr-1" />
                         MobilePay accepteret
                       </label>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.danish_based}
-                          onChange={(e) => setFormData({...formData, danish_based: e.target.checked})}
-                          className="mr-2"
-                        />
-                        Dansk webshop
-                      </label>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                          Land
+                        </label>
+                        <select
+                          value={formData.country}
+                          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="denmark">🇩🇰 Danmark</option>
+                          <option value="norway">🇳🇴 Norge</option>
+                          <option value="sweden">🇸🇪 Sverige</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.featured}
-                          onChange={(e) => setFormData({...formData, featured: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                           className="mr-2"
                         />
                         Udvalgt (vis på forsiden)
@@ -933,12 +963,11 @@ const WebshopManager = () => {
                         </label>
                         <select
                           value={formData.status}
-                          onChange={(e) => setFormData({...formData, status: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="active">Aktiv</option>
                           <option value="inactive">Inaktiv</option>
-                          <option value="pending">Afventer</option>
                         </select>
                       </div>
                     </div>
@@ -960,8 +989,8 @@ const WebshopManager = () => {
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    whileHover={{scale: 1.05}}
-                    whileTap={{scale: 0.95}}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
                   >
                     <SafeIcon icon={FiSave} className="w-4 h-4" />

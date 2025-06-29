@@ -1,38 +1,38 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import React,{useState} from 'react'
+import {motion} from 'framer-motion'
 import * as FiIcons from 'react-icons/fi'
 import SafeIcon from '../../common/SafeIcon'
-import { useAuth } from '../../hooks/useAuth'
+import {useAuth} from '../../hooks/useAuth'
 
-const { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiCheckCircle, FiAlertCircle } = FiIcons
+const {FiMail,FiLock,FiEye,FiEyeOff,FiUser,FiCheckCircle,FiAlertCircle}=FiIcons
 
-const AdminLogin = () => {
-  const [email, setEmail] = useState('admin@shopdk.dk')
-  const [password, setPassword] = useState('ShopDK2024!Admin')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [showSetup, setShowSetup] = useState(false)
-  const [setupData, setSetupData] = useState({
+const AdminLogin=()=> {
+  const [email,setEmail]=useState('admin@shopdk.dk')
+  const [password,setPassword]=useState('ShopDK2024!Admin')
+  const [showPassword,setShowPassword]=useState(false)
+  const [loading,setLoading]=useState(false)
+  const [error,setError]=useState('')
+  const [success,setSuccess]=useState('')
+  const [showSetup,setShowSetup]=useState(false)
+  const [setupData,setSetupData]=useState({
     fullName: 'System Administrator',
     email: 'admin@shopdk.dk',
     password: 'ShopDK2024!Admin'
   })
 
-  const { signIn, createAdminUser } = useAuth()
+  const {signIn,createAdminUser}=useAuth()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit=async (e)=> {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    console.log('🔑 Attempting login with:', { email })
-
-    const { error } = await signIn(email, password)
+    
+    console.log('🔑 Attempting login with:',{email})
+    
+    const {error}=await signIn(email,password)
     
     if (error) {
-      console.error('❌ Login error:', error)
+      console.error('❌ Login error:',error)
       if (error.message?.includes('Invalid login credentials')) {
         setError('Email eller adgangskode er forkert. Prøv at oprette en admin bruger først.')
       } else {
@@ -41,10 +41,11 @@ const AdminLogin = () => {
     } else {
       console.log('✅ Login successful!')
     }
+    
     setLoading(false)
   }
 
-  const handleSetupAdmin = async (e) => {
+  const handleSetupAdmin=async (e)=> {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -53,19 +54,34 @@ const AdminLogin = () => {
     try {
       console.log('🎯 Starting admin user creation process...')
       
-      const result = await createAdminUser(setupData)
+      // Validate input
+      if (!setupData.fullName || !setupData.email || !setupData.password) {
+        setError('Alle felter skal udfyldes')
+        setLoading(false)
+        return
+      }
+
+      if (setupData.password.length < 6) {
+        setError('Adgangskoden skal være mindst 6 tegn lang')
+        setLoading(false)
+        return
+      }
+
+      const result=await createAdminUser(setupData)
       
       if (result.error) {
-        console.error('💥 Setup error:', result.error)
-        let errorMessage = result.error.message || 'Ukendt fejl'
+        console.error('💥 Setup error:',result.error)
+        let errorMessage=result.error.message || 'Ukendt fejl'
         
         // Handle specific error types
         if (errorMessage.includes('User already registered')) {
-          errorMessage = 'En bruger med denne email eksisterer allerede. Prøv at logge ind i stedet.'
+          errorMessage='En bruger med denne email eksisterer allerede. Prøv at logge ind i stedet.'
         } else if (errorMessage.includes('Password should be at least')) {
-          errorMessage = 'Adgangskoden skal være mindst 6 tegn lang.'
+          errorMessage='Adgangskoden skal være mindst 6 tegn lang.'
         } else if (errorMessage.includes('duplicate key value violates unique constraint')) {
-          errorMessage = 'En admin bruger med denne email eksisterer allerede. Prøv at logge ind.'
+          errorMessage='En admin bruger med denne email eksisterer allerede. Prøv at logge ind.'
+        } else if (errorMessage.includes('Invalid email')) {
+          errorMessage='Ugyldig email adresse.'
         }
         
         setError(`Fejl ved oprettelse: ${errorMessage}`)
@@ -74,7 +90,7 @@ const AdminLogin = () => {
         setSuccess('Admin bruger oprettet succesfuldt! Du er nu logget ind.')
         
         // Clear form and switch back to login view after a short delay
-        setTimeout(() => {
+        setTimeout(()=> {
           setShowSetup(false)
           setEmail(setupData.email)
           setPassword(setupData.password)
@@ -82,18 +98,19 @@ const AdminLogin = () => {
         }, 2000)
       }
     } catch (error) {
-      console.error('💥 Unexpected setup error:', error)
-      setError('Uventet fejl: ' + error.message)
+      console.error('💥 Unexpected setup error:',error)
+      setError('Uventet fejl: ' + (error.message || 'Kontakt support'))
     }
+    
     setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={{opacity: 0,y: 20}}
+        animate={{opacity: 1,y: 0}}
+        transition={{duration: 0.6}}
         className="max-w-md w-full space-y-8"
       >
         <div>
@@ -110,8 +127,8 @@ const AdminLogin = () => {
 
         {success && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{opacity: 0,y: -10}}
+            animate={{opacity: 1,y: 0}}
             className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2"
           >
             <SafeIcon icon={FiCheckCircle} className="w-4 h-4" />
@@ -121,8 +138,8 @@ const AdminLogin = () => {
 
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{opacity: 0,y: -10}}
+            animate={{opacity: 1,y: 0}}
             className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2"
           >
             <SafeIcon icon={FiAlertCircle} className="w-4 h-4" />
@@ -132,9 +149,9 @@ const AdminLogin = () => {
 
         {!showSetup ? (
           <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            transition={{delay: 0.2}}
             className="mt-8 space-y-6"
             onSubmit={handleSubmit}
           >
@@ -154,7 +171,7 @@ const AdminLogin = () => {
                     autoComplete="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e)=> setEmail(e.target.value)}
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="admin@shopdk.dk"
                   />
@@ -176,14 +193,14 @@ const AdminLogin = () => {
                     autoComplete="current-password"
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e)=> setPassword(e.target.value)}
                     className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={()=> setShowPassword(!showPassword)}
                   >
                     <SafeIcon icon={showPassword ? FiEyeOff : FiEye} className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                   </button>
@@ -195,8 +212,8 @@ const AdminLogin = () => {
               <motion.button
                 type="submit"
                 disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{scale: 1.02}}
+                whileTap={{scale: 0.98}}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Logger ind...' : 'Log ind'}
@@ -204,13 +221,13 @@ const AdminLogin = () => {
 
               <motion.button
                 type="button"
-                onClick={() => {
+                onClick={()=> {
                   setShowSetup(true)
                   setError('')
                   setSuccess('')
                 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{scale: 1.02}}
+                whileTap={{scale: 0.98}}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <SafeIcon icon={FiUser} className="w-4 h-4 mr-2" />
@@ -229,8 +246,8 @@ const AdminLogin = () => {
           </motion.form>
         ) : (
           <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
             className="mt-8 space-y-6"
             onSubmit={handleSetupAdmin}
           >
@@ -252,7 +269,7 @@ const AdminLogin = () => {
                   type="text"
                   required
                   value={setupData.fullName}
-                  onChange={(e) => setSetupData({ ...setupData, fullName: e.target.value })}
+                  onChange={(e)=> setSetupData({...setupData,fullName: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -265,7 +282,7 @@ const AdminLogin = () => {
                   type="email"
                   required
                   value={setupData.email}
-                  onChange={(e) => setSetupData({ ...setupData, email: e.target.value })}
+                  onChange={(e)=> setSetupData({...setupData,email: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -279,7 +296,7 @@ const AdminLogin = () => {
                   required
                   minLength="6"
                   value={setupData.password}
-                  onChange={(e) => setSetupData({ ...setupData, password: e.target.value })}
+                  onChange={(e)=> setSetupData({...setupData,password: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum 6 tegn</p>
@@ -290,8 +307,8 @@ const AdminLogin = () => {
               <motion.button
                 type="submit"
                 disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{scale: 1.02}}
+                whileTap={{scale: 0.98}}
                 className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? (
@@ -309,7 +326,7 @@ const AdminLogin = () => {
 
               <button
                 type="button"
-                onClick={() => {
+                onClick={()=> {
                   setShowSetup(false)
                   setError('')
                   setSuccess('')

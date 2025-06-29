@@ -1,19 +1,20 @@
-import React, { useState } from 'react'
+import React,{useState} from 'react'
 import AdminGuard from './AdminGuard'
 import AdminLayout from './AdminLayout'
 import Dashboard from './Dashboard'
 import WebshopManager from './WebshopManager'
 import CategoryManager from './CategoryManager'
 import BlogManager from './BlogManager'
+import BlogCategoryManager from './BlogCategoryManager'
 import BulkImport from './BulkImport'
 import Analytics from './Analytics'
-import MenuFooterManager from './MenuFooterManager'
 import SiteSettings from './SiteSettings'
+import CodeSnippetsManager from './CodeSnippetsManager'
 
-const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('dashboard')
+const AdminPanel=()=> {
+  const [activeTab,setActiveTab]=useState('dashboard')
 
-  const renderActiveTab = () => {
+  const renderActiveTab=()=> {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />
@@ -23,12 +24,14 @@ const AdminPanel = () => {
         return <CategoryManager />
       case 'blog':
         return <BlogManager />
+      case 'blog-categories':
+        return <BlogCategoryManager />
       case 'bulk-import':
         return <BulkImport />
-      case 'menu-footer':
-        return <MenuFooterManager />
       case 'site-settings':
         return <SiteSettings />
+      case 'code-snippets':
+        return <CodeSnippetsManager />
       case 'analytics':
         return <Analytics />
       default:

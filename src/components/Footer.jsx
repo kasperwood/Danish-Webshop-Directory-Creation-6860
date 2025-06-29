@@ -8,10 +8,10 @@ const { FiFacebook, FiInstagram, FiTwitter, FiMail, FiPhone, FiMapPin } = FiIcon
 
 const Footer = () => {
   const [footerSettings, setFooterSettings] = useState({
-    company_description: 'Danmarks største webshop directory med over 1000+ verificerede webshops. Find og sammenlign de bedste danske webshops med pålidelige anmeldelser.',
-    contact_email: 'info@webshop-oversigt.dk',
+    company_description: 'Berlingske Media A/S\nPilestræde 34\nDK-1147 København K',
+    contact_email: 'performance@berlingskemedia.dk',
     contact_location: 'København, Danmark',
-    copyright_text: '© 2024 Webshop oversigt. Alle rettigheder forbeholdes.',
+    copyright_text: '',
     facebook_url: '#',
     instagram_url: '#',
     twitter_url: '#'
@@ -21,8 +21,9 @@ const Footer = () => {
     logo_url: 'https://quest-media-storage-bucket.s3.us-east-2.amazonaws.com/1751187545596-freepik_br_814ede14-2fc7-447b-b665-328e08873468.png',
     site_name: 'Webshop oversigt'
   });
+  const [categories, setCategories] = useState([]);
 
-  // Default footer structure
+  // Updated footer structure with correct categories
   const defaultFooterStructure = {
     categories: [
       { name: 'Herremode', slug: 'herremode' },
@@ -31,25 +32,24 @@ const Footer = () => {
       { name: 'Sport og fritid', slug: 'sport-og-fritid' },
       { name: 'Hjemmet', slug: 'hjemmet' },
       { name: 'Elektronik', slug: 'elektronik' },
+      { name: 'Voksen', slug: 'voksen' },
+      { name: 'Mad og drikke', slug: 'mad-og-drikke' },
+      { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser' },
     ],
     blog: [
       { name: 'Alle artikler', slug: 'blog' },
       { name: 'Shopping Guides', slug: 'blog?kategori=guides' },
-      { name: 'Webshop Anmeldelser', slug: 'blog?kategori=anmeldelser' },
       { name: 'Sikkerhed', slug: 'blog?kategori=sikkerhed' },
     ],
     information: [
-      { name: 'Om Webshop oversigt', url: '#' },
       { name: 'Tilføj din webshop', url: '#' },
-      { name: 'Partnere', url: '#' },
-      { name: 'Annoncering', url: '#' },
-      { name: 'FAQ', url: '#' },
+      { name: 'Bliv Tryghedsmærket', url: 'https://swiy.co/tryghedsmaerket' },
     ],
     legal: [
-      { name: 'Privatlivspolitik', url: '#' },
-      { name: 'Cookiepolitik', url: '#' },
-      { name: 'Handelsbetingelser', url: '#' },
-      { name: 'Sitemap', url: '#' },
+      { name: 'Cookie-og privatlivspolitik', url: 'https://www.berlingskemedia.dk/cookie-og-privatlivspolitik/' },
+      { name: 'Generelle handelsbetingelser', url: 'https://www.berlingskemedia.dk/handelsbetingelser' },
+      { name: 'Cookiedeklaration', url: 'https://www.bt.dk/cookiedeklaration' },
+      { name: 'Vilkår', url: 'https://www.berlingskemedia.dk/ophavsret-og-vilkaar/' },
     ]
   };
 
@@ -57,7 +57,24 @@ const Footer = () => {
     fetchFooterSettings();
     fetchFooterLinks();
     fetchSiteSettings();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories_dk847392')
+        .select('name, slug')
+        .eq('status', 'active')
+        .order('sort_order');
+
+      if (!error && data) {
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const fetchFooterSettings = async () => {
     try {
@@ -67,7 +84,12 @@ const Footer = () => {
         .limit(1);
 
       if (!error && data && data.length > 0) {
-        setFooterSettings(data[0]);
+        setFooterSettings({
+          ...footerSettings,
+          ...data[0],
+          company_description: 'Berlingske Media A/S\nPilestræde 34\nDK-1147 København K',
+          contact_email: 'performance@berlingskemedia.dk'
+        });
       }
     } catch (error) {
       console.error('Error fetching footer settings:', error);
@@ -114,8 +136,8 @@ const Footer = () => {
     return acc;
   }, {});
 
-  // Use default structure if no custom links are found
-  const categoriesLinks = groupedLinks.categories?.length > 0 ? groupedLinks.categories : defaultFooterStructure.categories;
+  // Use categories from database or default structure
+  const categoriesLinks = categories.length > 0 ? categories : defaultFooterStructure.categories;
   const blogLinks = groupedLinks.blog?.length > 0 ? groupedLinks.blog : defaultFooterStructure.blog;
   const informationLinks = groupedLinks.information?.length > 0 ? groupedLinks.information : defaultFooterStructure.information;
   const legalLinks = groupedLinks.legal?.length > 0 ? groupedLinks.legal : defaultFooterStructure.legal;
@@ -129,14 +151,17 @@ const Footer = () => {
     return '#';
   };
 
+  const isExternalLink = (url) => {
+    return url.startsWith('http') || url.startsWith('mailto');
+  };
+
   return (
     <>
       {/* Disclaimer */}
       <div className="bg-gray-100 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <p className="text-xs text-gray-600 text-center leading-relaxed">
-            Dette er et kommercielt site udgivet af Berlingske Medias kommercielle afdeling. 
-            Berlingske Medias uafhængige redaktioner har intet at gøre med udarbejdelsen af indholdet.
+            Dette er et kommercielt site udgivet af Berlingske Medias kommercielle afdeling. Berlingske Medias uafhængige redaktioner har intet at gøre med udarbejdelsen af indholdet.
           </p>
         </div>
       </div>
@@ -149,16 +174,18 @@ const Footer = () => {
             <div className="sm:col-span-2 lg:col-span-2">
               <Link to="/" className="inline-block mb-4">
                 <div className="flex items-center">
-                  <img 
-                    src={siteSettings.logo_url} 
-                    alt={siteSettings.site_name} 
+                  <img
+                    src={siteSettings.logo_url}
+                    alt={siteSettings.site_name}
                     className="h-12 w-auto brightness-0 invert"
                   />
                 </div>
               </Link>
-              <p className="text-gray-300 mb-6 text-sm lg:text-base leading-relaxed">
+              
+              <div className="text-gray-300 mb-6 text-sm lg:text-base leading-relaxed whitespace-pre-line">
                 {footerSettings.company_description}
-              </p>
+              </div>
+
               <div className="flex space-x-4">
                 {footerSettings.facebook_url && footerSettings.facebook_url !== '#' && (
                   <a
@@ -190,11 +217,11 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Categories */}
+            {/* Categories - Show all categories */}
             <div className="lg:col-span-1">
               <h3 className="text-lg font-semibold mb-4 text-white">Kategorier</h3>
               <ul className="space-y-2">
-                {categoriesLinks.slice(0, 6).map((link, index) => (
+                {categoriesLinks.map((link, index) => (
                   <li key={index}>
                     <Link
                       to={getLinkUrl(link)}
@@ -204,16 +231,6 @@ const Footer = () => {
                     </Link>
                   </li>
                 ))}
-                {categoriesLinks.length > 6 && (
-                  <li className="pt-2">
-                    <Link
-                      to="/kategorier"
-                      className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                    >
-                      Se alle kategorier →
-                    </Link>
-                  </li>
-                )}
               </ul>
             </div>
 
@@ -238,54 +255,71 @@ const Footer = () => {
             <div className="lg:col-span-1">
               <h3 className="text-lg font-semibold mb-4 text-white">Information</h3>
               <ul className="space-y-2 mb-6">
-                {informationLinks.map((link, index) => (
-                  <li key={index}>
-                    <a
-                      href={getLinkUrl(link)}
-                      className="text-gray-300 hover:text-blue-400 transition-colors text-sm block py-1"
-                    >
-                      {link.name || link.label}
-                    </a>
-                  </li>
-                ))}
+                {informationLinks.map((link, index) => {
+                  const url = getLinkUrl(link);
+                  const isExternal = isExternalLink(url);
+                  if (isExternal) {
+                    return (
+                      <li key={index}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-300 hover:text-blue-400 transition-colors text-sm block py-1"
+                        >
+                          {link.name || link.label}
+                        </a>
+                      </li>
+                    );
+                  } else {
+                    return (
+                      <li key={index}>
+                        <Link
+                          to={url}
+                          className="text-gray-300 hover:text-blue-400 transition-colors text-sm block py-1"
+                        >
+                          {link.name || link.label}
+                        </Link>
+                      </li>
+                    );
+                  }
+                })}
               </ul>
 
-              {/* Contact Info */}
+              {/* Contact Info - Only Email */}
               <div className="space-y-3">
-                {footerSettings.contact_email && (
-                  <div className="flex items-center gap-2">
-                    <SafeIcon icon={FiMail} className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <span className="text-gray-300 text-sm">{footerSettings.contact_email}</span>
-                  </div>
-                )}
-                {footerSettings.contact_location && (
-                  <div className="flex items-center gap-2">
-                    <SafeIcon icon={FiMapPin} className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <span className="text-gray-300 text-sm">{footerSettings.contact_location}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <SafeIcon icon={FiMail} className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <a
+                    href={`mailto:${footerSettings.contact_email}`}
+                    className="text-gray-300 text-sm hover:text-blue-400 transition-colors"
+                  >
+                    {footerSettings.contact_email}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom Section */}
+          {/* Bottom Section - Only Legal Links */}
           <div className="border-t border-gray-800 mt-8 pt-6">
-            <div className="flex flex-col space-y-4 lg:flex-row lg:justify-between lg:items-center lg:space-y-0">
-              <p className="text-gray-400 text-sm text-center lg:text-left">
-                {footerSettings.copyright_text}
-              </p>
-
+            <div className="flex justify-center">
               {/* Legal Links */}
-              <div className="flex flex-wrap justify-center lg:justify-end gap-x-6 gap-y-2">
-                {legalLinks.map((link, index) => (
-                  <a
-                    key={index}
-                    href={getLinkUrl(link)}
-                    className="text-gray-400 hover:text-blue-400 text-sm transition-colors"
-                  >
-                    {link.name || link.label}
-                  </a>
-                ))}
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                {legalLinks.map((link, index) => {
+                  const url = getLinkUrl(link);
+                  return (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-blue-400 text-sm transition-colors"
+                    >
+                      {link.name || link.label}
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>

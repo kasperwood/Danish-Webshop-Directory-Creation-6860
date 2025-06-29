@@ -106,19 +106,18 @@ const CategoryManager = () => {
   }
 
   const handleDelete = async (id) => {
-    if (confirm('Er du sikker på, at du vil slette denne kategori?')) {
-      try {
-        const { error } = await supabase
-          .from('categories_dk847392')
-          .delete()
-          .eq('id', id)
+    // Removed browser confirm dialog
+    try {
+      const { error } = await supabase
+        .from('categories_dk847392')
+        .delete()
+        .eq('id', id)
 
-        if (!error) {
-          await fetchCategories()
-        }
-      } catch (error) {
-        console.error('Error deleting category:', error)
+      if (!error) {
+        await fetchCategories()
       }
+    } catch (error) {
+      console.error('Error deleting category:', error)
     }
   }
 
@@ -338,7 +337,6 @@ const CategoryManager = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Status

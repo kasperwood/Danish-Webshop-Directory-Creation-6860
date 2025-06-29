@@ -12,8 +12,7 @@ const BulkImport = () => {
   const [results, setResults] = useState([])
   const [showPreview, setShowPreview] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-
-  const [categories, setCategories] = useState([
+  const [categories] = useState([
     { name: 'Herremode', slug: 'herremode' },
     { name: 'Damemode', slug: 'damemode' },
     { name: 'Børn', slug: 'boern' },
@@ -22,7 +21,7 @@ const BulkImport = () => {
     { name: 'Elektronik', slug: 'elektronik' },
     { name: 'Voksen', slug: 'voksen' },
     { name: 'Mad og drikke', slug: 'mad-og-drikke' },
-    { name: 'Bøger og kultur', slug: 'boeger-og-kultur' }
+    { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser' }
   ])
 
   // Extract domain from URL
@@ -55,31 +54,39 @@ const BulkImport = () => {
 
       const domain = extractDomain(url)
       const name = domain.split('.')[0]
-      
+
       // Simulate extracted data - NO FAKE CERTIFICATIONS
       const mockData = {
         url,
         name: name.charAt(0).toUpperCase() + name.slice(1),
         slug: generateSlug(name),
-        description: `Online webshop med et bredt udvalg af kvalitetsprodukter fra ${name}.`,
+        description: '',  // Leave empty for bulk import
         logo_url: `https://logo.clearbit.com/${domain}`,
         website_url: url,
         trustpilot_url: `https://dk.trustpilot.com/review/${domain}`,
-        category: 'elektronik', // Default category
-        emaerket: false, // ONLY set to true if actually verified
-        tryghedsmaerket: false, // ONLY set to true if actually verified
+        categories: [],  // Leave empty for bulk import
+        emaerket: false,  // ONLY set to true if actually verified
+        tryghedsmaerket: false,  // ONLY set to true if actually verified
+        mobilepay_accepted: false,  // Default to false
         danish_based: domain.endsWith('.dk'),
-        discount_text: 'Fri fragt over 500 kr',
+        discount_text: '',  // Leave empty for bulk import
         shipping_info: 'Levering 1-3 hverdage',
         special_offer: false,
         featured: false,
-        status: 'active'
+        status: 'inactive',  // Set to inactive by default
+        sort_order: 0,
+        usp_items: [],  // Leave empty for bulk import
+        headline_text: '',
+        headline_active: false,
+        headline_color: '#ffffff',
+        headline_bg_color: '#ff0000',
+        headline_speed: 10
       }
 
       return { success: true, data: mockData }
     } catch (error) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: `Kunne ikke hente data fra ${url}: ${error.message}`,
         data: { url, name: extractDomain(url), error: true }
       }
@@ -98,13 +105,12 @@ const BulkImport = () => {
       .filter(url => url && url.startsWith('http'))
 
     if (urlList.length === 0) {
-      alert('Ingen gyldige URLs fundet. Sørg for at URLs starter med http:// eller https://')
+      // Silent error handling - no browser alert
       setProcessing(false)
       return
     }
 
     const processedResults = []
-
     for (const url of urlList) {
       const result = await extractWebsiteData(url)
       processedResults.push(result)
@@ -133,33 +139,69 @@ const BulkImport = () => {
 
   const handleImportSelected = async () => {
     const validResults = results.filter(result => result.success && !result.data.error)
-    
+
     if (validResults.length === 0) {
-      alert('Ingen gyldige webshops at importere')
+      // Silent error handling - no browser alert
       return
     }
 
     setProcessing(true)
 
     try {
-      const webshopsToInsert = validResults.map(result => result.data)
-      
-      const { error } = await supabase
+      console.log('🎯 Starting bulk import...')
+
+      // Prepare webshops for insertion
+      const webshopsToInsert = validResults.map(result => {
+        const data = result.data
+        return {
+          name: data.name,
+          slug: data.slug,
+          description: data.description || '',  // Leave empty
+          logo_url: data.logo_url,
+          website_url: data.website_url,
+          trustpilot_url: data.trustpilot_url,
+          categories: Array.isArray(data.categories) ? data.categories : [],  // Empty array
+          emaerket: Boolean(data.emaerket),
+          tryghedsmaerket: Boolean(data.tryghedsmaerket),
+          mobilepay_accepted: Boolean(data.mobilepay_accepted),
+          danish_based: Boolean(data.danish_based),
+          discount_text: data.discount_text || '',  // Leave empty
+          featured: Boolean(data.featured),
+          status: 'inactive',  // Always set to inactive
+          sort_order: data.sort_order || 0,
+          usp_items: [],  // Empty array
+          headline_text: data.headline_text || '',
+          headline_active: Boolean(data.headline_active),
+          headline_color: data.headline_color || '#ffffff',
+          headline_bg_color: data.headline_bg_color || '#ff0000',
+          headline_speed: data.headline_speed || 10,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      })
+
+      console.log('📝 Inserting webshops:', webshopsToInsert)
+
+      // Insert webshops into database
+      const { data: insertedData, error } = await supabase
         .from('webshops_dk847392')
         .insert(webshopsToInsert)
+        .select()
 
       if (error) {
-        console.error('Error inserting webshops:', error)
-        alert('Fejl ved import af webshops')
+        console.error('💥 Database error:', error)
+        // Silent error handling - no browser alert
       } else {
-        alert(`${validResults.length} webshops blev importeret succesfuldt!`)
+        console.log('✅ Successfully inserted:', insertedData)
+        // Silent success - no browser alert
+        // Reset form
         setResults([])
         setUrls('')
         setShowPreview(false)
       }
     } catch (error) {
-      console.error('Error during import:', error)
-      alert('Uventet fejl under import')
+      console.error('💥 Unexpected error:', error)
+      // Silent error handling - no browser alert
     } finally {
       setProcessing(false)
     }
@@ -172,7 +214,7 @@ const BulkImport = () => {
         result.success ? 'Succes' : 'Fejl',
         result.data.name || 'N/A',
         result.data.url || 'N/A',
-        result.data.category || 'N/A',
+        Array.isArray(result.data.categories) ? result.data.categories.join(',') : result.data.categories || 'N/A',
         result.data.danish_based ? 'Ja' : 'Nej',
         result.data.emaerket ? 'Ja' : 'Nej',
         result.data.description || result.error || 'N/A'
@@ -199,8 +241,7 @@ const BulkImport = () => {
         <p className="text-gray-600">Importer flere webshops på én gang ved at indsætte deres URLs</p>
         <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>Vigtigt:</strong> Certificeringer (e-mærket, Tryghedsmærket) skal manuelt verificeres og opdateres efter import. 
-            Systemet sætter disse til "false" som standard for at undgå falske certificeringer.
+            <strong>Vigtigt:</strong> Importerede webshops er sat til "Inaktiv" status. Du skal manuelt aktivere, tilføje beskrivelser, kategorier og USP punkter efter import.
           </p>
         </div>
       </div>
@@ -235,7 +276,6 @@ const BulkImport = () => {
               <SafeIcon icon={processing ? FiRefreshCw : FiUpload} className={`w-4 h-4 ${processing ? 'animate-spin' : ''}`} />
               {processing ? 'Behandler...' : 'Start Import'}
             </motion.button>
-            
             {urls.trim() && (
               <p className="text-sm text-gray-600">
                 {urls.split('\n').filter(url => url.trim() && url.startsWith('http')).length} URLs fundet
@@ -280,10 +320,9 @@ const BulkImport = () => {
               whileTap={{ scale: 0.95 }}
               className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
             >
-              <SafeIcon icon={FiSave} className="w-4 h-4" />
-              Importer {successCount} Webshops
+              <SafeIcon icon={processing ? FiRefreshCw : FiSave} className={`w-4 h-4 ${processing ? 'animate-spin' : ''}`} />
+              {processing ? 'Importerer...' : `Importer ${successCount} Webshops (Inaktiv)`}
             </motion.button>
-            
             <button
               onClick={exportResults}
               className="bg-gray-100 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-200 flex items-center gap-2"
@@ -291,7 +330,6 @@ const BulkImport = () => {
               <SafeIcon icon={FiDownload} className="w-4 h-4" />
               Eksporter Resultater
             </button>
-            
             <button
               onClick={() => setShowPreview(false)}
               className="text-gray-600 hover:text-gray-700 px-4 py-3"
@@ -304,9 +342,14 @@ const BulkImport = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="max-h-96 overflow-y-auto">
               {results.map((result, index) => (
-                <div key={index} className={`p-4 border-b border-gray-200 ${result.success && !result.data.error ? 'bg-green-50' : 'bg-red-50'}`}>
+                <div
+                  key={index}
+                  className={`p-4 border-b border-gray-200 ${
+                    result.success && !result.data.error ? 'bg-green-50' : 'bg-red-50'
+                  }`}
+                >
                   {editingItem === index ? (
-                    <EditForm 
+                    <EditForm
                       data={result.data}
                       categories={categories}
                       onSave={(data) => handleSaveEdit(index, data)}
@@ -316,9 +359,11 @@ const BulkImport = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <SafeIcon 
-                            icon={result.success && !result.data.error ? FiCheck : FiX} 
-                            className={`w-4 h-4 ${result.success && !result.data.error ? 'text-green-600' : 'text-red-600'}`} 
+                          <SafeIcon
+                            icon={result.success && !result.data.error ? FiCheck : FiX}
+                            className={`w-4 h-4 ${
+                              result.success && !result.data.error ? 'text-green-600' : 'text-red-600'
+                            }`}
                           />
                           <span className="font-medium">{result.data.name}</span>
                           {result.data.danish_based && (
@@ -328,8 +373,9 @@ const BulkImport = () => {
                         <div className="text-sm text-gray-600 mb-1">{result.data.url}</div>
                         {result.success && !result.data.error ? (
                           <div className="text-sm text-gray-600">
-                            <div>Kategori: {result.data.category}</div>
-                            <div>Beskrivelse: {result.data.description}</div>
+                            <div>Status: Inaktiv (skal aktiveres manuelt)</div>
+                            <div>Kategorier: Ikke angivet (skal tilføjes manuelt)</div>
+                            <div>Beskrivelse: Ikke angivet (skal tilføjes manuelt)</div>
                             <div className="text-xs text-orange-600 mt-1">
                               ⚠️ Certificeringer skal verificeres manuelt
                             </div>
@@ -420,7 +466,7 @@ const EditForm = ({ data, categories, onSave, onCancel }) => {
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Beskrivelse</label>
         <textarea
@@ -433,10 +479,10 @@ const EditForm = ({ data, categories, onSave, onCancel }) => {
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Kategorier</label>
           <select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            value={Array.isArray(formData.categories) ? formData.categories[0] : formData.categories}
+            onChange={(e) => setFormData({ ...formData, categories: [e.target.value] })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {categories.map((category) => (

@@ -1,113 +1,106 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import SEOHead from './SEOHead';
 import Breadcrumbs from './Breadcrumbs';
+import supabase from '../lib/supabase';
 
-const { FiCalendar, FiUser, FiArrowRight, FiClock } = FiIcons;
+const { FiCalendar, FiUser, FiArrowRight, FiClock, FiStar, FiTrendingUp, FiFilter, FiSearch, FiEye } = FiIcons;
 
 const BlogPage = () => {
-  const blogPosts = [
-    {
-      id: 1,
-      title: 'Guide: Sådan finder du de bedste webshop tilbud i 2024',
-      slug: 'guide-bedste-webshop-tilbud-2024',
-      excerpt: 'Lær de bedste tricks til at finde de mest favorable tilbud på danske webshops. Vi deler insider-tips og strategier.',
-      content: 'Komplet guide content...',
-      author: 'Sarah Nielsen',
-      publishedAt: '2024-01-15',
-      readTime: '5 min',
-      category: 'Guides',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=400&fit=crop',
-      tags: ['shopping', 'tilbud', 'besparelser']
-    },
-    {
-      id: 2,
-      title: '10 danske webshops du skal kende i 2024',
-      slug: '10-danske-webshops-2024',
-      excerpt: 'Opdag de mest innovative og pålidelige danske webshops, der definerer fremtiden for online shopping.',
-      content: 'Article content...',
-      author: 'Michael Hansen',
-      publishedAt: '2024-01-12',
-      readTime: '7 min',
-      category: 'Anmeldelser',
-      image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop',
-      tags: ['webshops', 'anmeldelser', 'dansk e-handel']
-    },
-    {
-      id: 3,
-      title: 'Sikkerhed ved online shopping: Dit komplette tjekliste',
-      slug: 'sikkerhed-online-shopping-tjekliste',
-      excerpt: 'Beskyt dig selv mod svindel og useriøse webshops med vores omfattende sikkerhedsguide.',
-      content: 'Security guide content...',
-      author: 'Linda Sørensen',
-      publishedAt: '2024-01-10',
-      readTime: '6 min',
-      category: 'Sikkerhed',
-      image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=400&fit=crop',
-      tags: ['sikkerhed', 'online shopping', 'forbrugertips']
-    },
-    {
-      id: 4,
-      title: 'Trustpilot anmeldelser: Sådan læser du mellem linjerne',
-      slug: 'trustpilot-anmeldelser-guide',
-      excerpt: 'Lær at identificere ægte anmeldelser og få maksimalt udbytte af Trustpilot når du vælger webshop.',
-      content: 'Trustpilot guide content...',
-      author: 'Anders Petersen',
-      publishedAt: '2024-01-08',
-      readTime: '4 min',
-      category: 'Guides',
-      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop',
-      tags: ['trustpilot', 'anmeldelser', 'webshop valg']
-    },
-    {
-      id: 5,
-      title: 'Bæredygtig shopping: Grønne webshops i Danmark',
-      slug: 'baeredygtig-shopping-groenne-webshops',
-      excerpt: 'Udforsk danske webshops der prioriterer bæredygtighed og miljøbevidste forretningspraksisser.',
-      content: 'Sustainability content...',
-      author: 'Emma Larsen',
-      publishedAt: '2024-01-05',
-      readTime: '8 min',
-      category: 'Bæredygtighed',
-      image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&h=400&fit=crop',
-      tags: ['bæredygtighed', 'grøn shopping', 'miljø']
-    },
-    {
-      id: 6,
-      title: 'Black Friday vs. normale tilbud: Hvad er reelt bedst?',
-      slug: 'black-friday-vs-normale-tilbud',
-      excerpt: 'Vi analyserer om Black Friday tilbud virkelig er bedre, eller om du kan finde lige så gode tilbud året rundt.',
-      content: 'Black Friday analysis...',
-      author: 'Thomas Nielsen',
-      publishedAt: '2024-01-03',
-      readTime: '6 min',
-      category: 'Analyse',
-      image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&h=400&fit=crop',
-      tags: ['black friday', 'tilbud', 'prissammenligning']
-    }
-  ];
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('kategori') || '');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState([]);
 
-  const categories = [
-    { name: 'Alle', count: 25, active: true },
-    { name: 'Guides', count: 8 },
-    { name: 'Anmeldelser', count: 6 },
-    { name: 'Sikkerhed', count: 4 },
-    { name: 'Bæredygtighed', count: 3 },
-    { name: 'Analyse', count: 4 }
-  ];
+  useEffect(() => {
+    fetchBlogPosts();
+    fetchCategories();
+  }, []);
+
+  const fetchBlogPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts_dk847392')
+        .select('*')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setBlogPosts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts_dk847392')
+        .select('category')
+        .eq('status', 'published')
+        .not('category', 'is', null);
+
+      if (!error && data) {
+        const uniqueCategories = [...new Set(data.map(post => post.category))];
+        setCategories(uniqueCategories.map(cat => ({ name: cat, count: data.filter(p => p.category === cat).length })));
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleCategoryChange = (categorySlug) => {
+    setSelectedCategory(categorySlug);
+    if (categorySlug) {
+      setSearchParams({ kategori: categorySlug });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const filteredPosts = blogPosts.filter(post => {
+    const matchesCategory = !selectedCategory || post.category?.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesSearch = !searchQuery || 
+      post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.meta_keywords?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const featuredPosts = filteredPosts.filter(post => post.featured).slice(0, 1);
+  const regularPosts = filteredPosts.filter(post => !post.featured);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <SEOHead 
+          title="Blog | Webshop Oversigt - Loading..."
+          description="Loading blog posts..."
+        />
+        <Breadcrumbs />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SEOHead
-        title="Blog - Shopping Tips & Webshop Anmeldelser | Webshop oversigt"
-        description="Læs de seneste shopping tips, webshop anmeldelser og guides til at finde de bedste tilbud på danske webshops. Ekspert råd til online shopping."
-        keywords="shopping blog, webshop anmeldelser, shopping tips, online shopping guide, danske webshops"
+      <SEOHead 
+        title="Shopping Guides & Webshop Anmeldelser | Danmarks Bedste Online Shopping Tips"
+        description="Læs ekspertguides til online shopping, dybdegående webshop anmeldelser og få insider-tips til at finde de bedste tilbud på danske webshops."
+        keywords="shopping guides, webshop anmeldelser, online shopping tips, danske webshops, e-handel guide, trustpilot anmeldelser"
       />
 
-      {/* Breadcrumbs */}
       <Breadcrumbs />
 
       {/* Blog Header */}
@@ -119,19 +112,19 @@ const BlogPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            {/* Large Logo */}
             <div className="flex justify-center mb-6">
-              <img
-                src="https://quest-media-storage-bucket.s3.us-east-2.amazonaws.com/1751187545596-freepik_br_814ede14-2fc7-447b-b665-328e08873468.png"
-                alt="Webshop oversigt"
-                className="h-20 w-auto"
+              <img 
+                src="https://quest-media-storage-bucket.s3.us-east-2.amazonaws.com/1751187545596-freepik_br_814ede14-2fc7-447b-b665-328e08873468.png" 
+                alt="Webshop oversigt" 
+                className="h-20 w-auto" 
               />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Blog
+              Shopping Guides & Webshop Anmeldelser
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Shopping tips, webshop anmeldelser og guides til at finde de bedste tilbud online
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Danmarks mest omfattende samling af ekspertguides til online shopping. 
+              Find de bedste danske webshops, lær sikkerhedstips og spar penge med vores insider-viden.
             </p>
           </motion.div>
         </div>
@@ -142,22 +135,64 @@ const BlogPage = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
-              <h3 className="font-semibold text-gray-900 mb-4">Kategorier</h3>
-              <ul className="space-y-2">
-                {categories.map((category) => (
-                  <li key={category.name}>
-                    <button className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between items-center ${category.active ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
-                      <span>{category.name}</span>
-                      <span className="text-sm text-gray-400">({category.count})</span>
+              {/* Search */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Søg i guides
+                </label>
+                <div className="relative">
+                  <SafeIcon icon={FiSearch} className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Søg efter guides..."
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div className="mb-8">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <SafeIcon icon={FiFilter} className="w-4 h-4" />
+                  Kategorier
+                </h3>
+                <ul className="space-y-2">
+                  <li>
+                    <button
+                      onClick={() => handleCategoryChange('')}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between items-center ${
+                        !selectedCategory ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>Alle</span>
+                      <span className="text-sm text-gray-400">({blogPosts.length})</span>
                     </button>
                   </li>
-                ))}
-              </ul>
+                  {categories.map((category) => (
+                    <li key={category.name}>
+                      <button
+                        onClick={() => handleCategoryChange(category.name)}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex justify-between items-center ${
+                          selectedCategory === category.name ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span>{category.name}</span>
+                        <span className="text-sm text-gray-400">({category.count})</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-2">Nyhedsbrev</h4>
+              {/* Newsletter Signup */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">
+                  Få de bedste shopping tips
+                </h4>
                 <p className="text-sm text-blue-700 mb-3">
-                  Få de seneste shopping tips direkte i din indbakke
+                  Tilmeld dig vores nyhedsbrev og få ugentlige ekspert-tips til online shopping
                 </p>
                 <input
                   type="email"
@@ -165,134 +200,188 @@ const BlogPage = () => {
                   className="w-full px-3 py-2 text-sm border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button className="w-full bg-blue-600 text-white text-sm py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  Tilmeld
+                  Tilmeld gratis
                 </button>
+                <p className="text-xs text-blue-600 mt-2 text-center">
+                  Ingen spam. Afmeld når som helst.
+                </p>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Featured Post */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="mb-12"
-            >
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="relative">
-                  <img
-                    src={blogPosts[0].image}
-                    alt={blogPosts[0].title}
-                    className="w-full h-64 object-cover"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      Fremhævet
-                    </span>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                    <div className="flex items-center gap-1">
-                      <SafeIcon icon={FiUser} className="w-4 h-4" />
-                      {blogPosts[0].author}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <SafeIcon icon={FiCalendar} className="w-4 h-4" />
-                      {new Date(blogPosts[0].publishedAt).toLocaleDateString('da-DK')}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <SafeIcon icon={FiClock} className="w-4 h-4" />
-                      {blogPosts[0].readTime}
-                    </div>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                    {blogPosts[0].title}
-                  </h2>
-                  <p className="text-gray-600 mb-4">
-                    {blogPosts[0].excerpt}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      {blogPosts[0].tags.map((tag) => (
-                        <span key={tag} className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <Link
-                      to={`/blog/${blogPosts[0].slug}`}
-                      className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                    >
-                      Læs mere
-                      <SafeIcon icon={FiArrowRight} className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Blog Posts Grid */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {blogPosts.slice(1).map((post, index) => (
-                <motion.article
-                  key={post.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            {filteredPosts.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📝</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Ingen blog artikler fundet
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Der er endnu ikke oprettet nogen blog artikler. 
+                </p>
+                <Link 
+                  to="/admin" 
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  <img
-                    src={post.image}
-                    alt={post.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs font-medium">
-                        {post.category}
-                      </span>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <SafeIcon icon={FiClock} className="w-3 h-3" />
-                        {post.readTime}
+                  Gå til Admin Panel
+                  <SafeIcon icon={FiArrowRight} className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* Featured Post */}
+                {featuredPosts.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="mb-12"
+                  >
+                    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                      <div className="relative">
+                        {featuredPosts[0].featured_image && (
+                          <img
+                            src={featuredPosts[0].featured_image}
+                            alt={featuredPosts[0].title}
+                            className="w-full h-80 object-cover"
+                          />
+                        )}
+                        <div className="absolute top-4 left-4 flex gap-2">
+                          <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                            <SafeIcon icon={FiStar} className="w-3 h-3" />
+                            Fremhævet Guide
+                          </span>
+                          <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {featuredPosts[0].category}
+                          </span>
+                        </div>
+                        {featuredPosts[0].view_count && (
+                          <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1">
+                            <SafeIcon icon={FiEye} className="w-4 h-4" />
+                            {featuredPosts[0].view_count.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-8">
+                        <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
+                          <div className="flex items-center gap-1">
+                            <SafeIcon icon={FiUser} className="w-4 h-4" />
+                            {featuredPosts[0].author || 'Admin'}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <SafeIcon icon={FiCalendar} className="w-4 h-4" />
+                            {new Date(featuredPosts[0].created_at).toLocaleDateString('da-DK')}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <SafeIcon icon={FiClock} className="w-4 h-4" />
+                            {featuredPosts[0].read_time || '5 min'}
+                          </div>
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                          {featuredPosts[0].title}
+                        </h2>
+                        <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                          {featuredPosts[0].excerpt}
+                        </p>
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="flex gap-2 flex-wrap">
+                            {featuredPosts[0].tags && featuredPosts[0].tags.slice(0, 4).map((tag) => (
+                              <span key={tag} className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                          <Link
+                            to={`/blog/${featuredPosts[0].slug}`}
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                          >
+                            Læs komplet guide
+                            <SafeIcon icon={FiArrowRight} className="w-4 h-4" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <SafeIcon icon={FiUser} className="w-3 h-3" />
-                        {post.author}
+                  </motion.div>
+                )}
+
+                {/* Regular Posts Grid */}
+                <div className="grid md:grid-cols-2 gap-8">
+                  {regularPosts.map((post, index) => (
+                    <motion.article
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    >
+                      {post.featured_image && (
+                        <img
+                          src={post.featured_image}
+                          alt={post.title}
+                          className="w-full h-48 object-cover"
+                        />
+                      )}
+                      <div className="p-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs font-medium">
+                            {post.category}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <SafeIcon icon={FiClock} className="w-3 h-3" />
+                            {post.read_time || '5 min'}
+                          </div>
+                          {post.view_count && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <SafeIcon icon={FiEye} className="w-3 h-3" />
+                              {post.view_count}
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                          {post.excerpt}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <SafeIcon icon={FiUser} className="w-3 h-3" />
+                            {post.author || 'Admin'}
+                          </div>
+                          <Link
+                            to={`/blog/${post.slug}`}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                          >
+                            Læs guide
+                            <SafeIcon icon={FiArrowRight} className="w-3 h-3" />
+                          </Link>
+                        </div>
                       </div>
-                      <Link
-                        to={`/blog/${post.slug}`}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                    </motion.article>
+                  ))}
+                </div>
+
+                {/* No results for search/filter */}
+                {filteredPosts.length === 0 && (selectedCategory || searchQuery) && (
+                  <div className="text-center py-12">
+                    <div className="text-gray-500">
+                      <p>Ingen guides fundet for den valgte kategori eller søgning.</p>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('');
+                          setSearchQuery('');
+                          setSearchParams({});
+                        }}
+                        className="mt-4 text-blue-600 hover:text-blue-700 underline"
                       >
-                        Læs mere
-                        <SafeIcon icon={FiArrowRight} className="w-3 h-3" />
-                      </Link>
+                        Vis alle guides
+                      </button>
                     </div>
                   </div>
-                </motion.article>
-              ))}
-            </div>
-
-            {/* Load More */}
-            <div className="text-center mt-12">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Indlæs flere artikler
-              </motion.button>
-            </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
