@@ -3,7 +3,7 @@ import {motion} from 'framer-motion'
 import * as FiIcons from 'react-icons/fi'
 import SafeIcon from '../../common/SafeIcon'
 
-const {FiHome,FiShoppingBag,FiGrid,FiEdit3,FiBarChart3,FiMenu,FiX,FiBell,FiUpload,FiLayout,FiTag,FiCode}=FiIcons
+const {FiHome,FiShoppingBag,FiGrid,FiBarChart3,FiMenu,FiX,FiBell,FiUpload,FiLayout,FiCode}=FiIcons
 
 const AdminLayout=({children,activeTab,setActiveTab})=> {
   const [sidebarOpen,setSidebarOpen]=useState(false)
@@ -15,8 +15,6 @@ const AdminLayout=({children,activeTab,setActiveTab})=> {
     {id: 'bulk-import',label: 'Bulk Import',icon: FiUpload},
     {id: 'site-settings',label: 'Site Indstillinger',icon: FiLayout},
     {id: 'code-snippets',label: 'Code Snippets',icon: FiCode},
-    {id: 'blog',label: 'Blog',icon: FiEdit3},
-    {id: 'blog-categories',label: 'Blog Kategorier',icon: FiTag},
     {id: 'analytics',label: 'Analytics',icon: FiBarChart3}
   ]
 
@@ -98,8 +96,6 @@ const AdminLayout=({children,activeTab,setActiveTab})=> {
                activeTab==='bulk-import' ? 'Bulk Import' :
                activeTab==='site-settings' ? 'Site Indstillinger' :
                activeTab==='code-snippets' ? 'Code Snippets' :
-               activeTab==='blog' ? 'Blog' :
-               activeTab==='blog-categories' ? 'Blog Kategorier' :
                activeTab==='analytics' ? 'Analytics' :
                activeTab}
             </h1>

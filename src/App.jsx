@@ -5,11 +5,8 @@ import Header from './components/Header'
 import Hero from './components/Hero'
 import FeaturedShops from './components/FeaturedShops'
 import Categories from './components/Categories'
-import BlogSection from './components/BlogSection'
 import Footer from './components/Footer'
 import CategoryPage from './components/CategoryPage'
-import BlogPage from './components/BlogPage'
-import BlogPost from './components/BlogPost'
 import SearchPage from './components/SearchPage'
 import Disclaimer from './components/Disclaimer'
 import SEOHead from './components/SEOHead'
@@ -33,7 +30,6 @@ function HomePage() {
       <Hero />
       <FeaturedShops />
       <Categories />
-      <BlogSection />
     </motion.div>
   )
 }
@@ -59,8 +55,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/kategori/:categorySlug" element={<CategoryPage />} />
-                <Route path="/blog" element={<BlogPage />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/search" element={<SearchPage />} />
               </Routes>
             </main>

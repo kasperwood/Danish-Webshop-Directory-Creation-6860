@@ -34,8 +34,7 @@ const Header = () => {
     { name: 'Elektronik', slug: 'elektronik', type: 'category' },
     { name: 'Voksen', slug: 'voksen', type: 'category' },
     { name: 'Mad og drikke', slug: 'mad-og-drikke', type: 'category' },
-    { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser', type: 'category' },
-    { name: 'Blog', slug: 'blog', type: 'page' }
+    { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser', type: 'category' }
   ];
 
   useEffect(() => {

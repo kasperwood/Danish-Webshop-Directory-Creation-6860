@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const { FiSearch } = FiIcons;
+const { FiSearch, FiShield, FiShoppingBag, FiCheckCircle } = FiIcons;
 
 const Hero = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +109,57 @@ const Hero = () => {
               </p>
             </motion.div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Trust badges */}
+      <div className="mt-12 bg-white/10 backdrop-blur-sm py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="flex flex-col items-center"
+            >
+              <SafeIcon icon={FiCheckCircle} className="w-8 h-8 mb-2 text-yellow-300" />
+              <h3 className="font-medium">Verificerede webshops</h3>
+              <p className="text-xs text-blue-100">Pålidelige og sikre</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="flex flex-col items-center"
+            >
+              <SafeIcon icon={FiShield} className="w-8 h-8 mb-2 text-yellow-300" />
+              <h3 className="font-medium">Sikker handel</h3>
+              <p className="text-xs text-blue-100">Tryg online shopping</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="flex flex-col items-center"
+            >
+              <SafeIcon icon={FiShoppingBag} className="w-8 h-8 mb-2 text-yellow-300" />
+              <h3 className="font-medium">+1000 webshops</h3>
+              <p className="text-xs text-blue-100">Stort udvalg</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+              className="flex flex-col items-center"
+            >
+              <SafeIcon icon={FiSearch} className="w-8 h-8 mb-2 text-yellow-300" />
+              <h3 className="font-medium">Nem søgning</h3>
+              <p className="text-xs text-blue-100">Find hurtigt det du søger</p>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

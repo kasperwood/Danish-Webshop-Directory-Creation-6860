@@ -36,14 +36,11 @@ const Footer = () => {
       { name: 'Mad og drikke', slug: 'mad-og-drikke' },
       { name: 'Rejser og oplevelser', slug: 'rejser-og-oplevelser' },
     ],
-    blog: [
-      { name: 'Alle artikler', slug: 'blog' },
-      { name: 'Shopping Guides', slug: 'blog?kategori=guides' },
-      { name: 'Sikkerhed', slug: 'blog?kategori=sikkerhed' },
-    ],
     information: [
       { name: 'Tilføj din webshop', url: '#' },
       { name: 'Bliv Tryghedsmærket', url: 'https://swiy.co/tryghedsmaerket' },
+      { name: 'Om os', url: '#' },
+      { name: 'Kontakt', url: '#' },
     ],
     legal: [
       { name: 'Cookie-og privatlivspolitik', url: 'https://www.berlingskemedia.dk/cookie-og-privatlivspolitik/' },
@@ -138,14 +135,12 @@ const Footer = () => {
 
   // Use categories from database or default structure
   const categoriesLinks = categories.length > 0 ? categories : defaultFooterStructure.categories;
-  const blogLinks = groupedLinks.blog?.length > 0 ? groupedLinks.blog : defaultFooterStructure.blog;
   const informationLinks = groupedLinks.information?.length > 0 ? groupedLinks.information : defaultFooterStructure.information;
   const legalLinks = groupedLinks.legal?.length > 0 ? groupedLinks.legal : defaultFooterStructure.legal;
 
   const getLinkUrl = (link) => {
     if (link.url) return link.url;
     if (link.slug) {
-      if (link.slug.startsWith('blog')) return `/${link.slug}`;
       return `/kategori/${link.slug}`;
     }
     return '#';
@@ -169,9 +164,9 @@ const Footer = () => {
       <footer className="bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
           {/* Main Footer Content */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
             {/* Company Info - Takes full width on mobile, 2 cols on desktop */}
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-1">
               <Link to="/" className="inline-block mb-4">
                 <div className="flex items-center">
                   <img
@@ -234,23 +229,6 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Blog */}
-            <div className="lg:col-span-1">
-              <h3 className="text-lg font-semibold mb-4 text-white">Blog</h3>
-              <ul className="space-y-2">
-                {blogLinks.map((link, index) => (
-                  <li key={index}>
-                    <Link
-                      to={getLinkUrl(link)}
-                      className="text-gray-300 hover:text-blue-400 transition-colors text-sm block py-1"
-                    >
-                      {link.name || link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {/* Information & Contact */}
             <div className="lg:col-span-1">
               <h3 className="text-lg font-semibold mb-4 text-white">Information</h3>
@@ -297,7 +275,37 @@ const Footer = () => {
                     {footerSettings.contact_email}
                   </a>
                 </div>
+                <div className="flex items-center gap-2">
+                  <SafeIcon icon={FiMapPin} className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-300 text-sm">
+                    {footerSettings.contact_location}
+                  </span>
+                </div>
               </div>
+            </div>
+
+            {/* Newsletter Signup */}
+            <div className="lg:col-span-1">
+              <h3 className="text-lg font-semibold mb-4 text-white">Nyhedsbrev</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Tilmeld dig vores nyhedsbrev og få de seneste nyheder om webshops og særlige tilbud.
+              </p>
+              <form className="space-y-2">
+                <input
+                  type="email"
+                  placeholder="Din e-mailadresse"
+                  className="w-full px-3 py-2 text-gray-900 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                >
+                  Tilmeld
+                </button>
+              </form>
+              <p className="text-gray-400 text-xs mt-2">
+                Vi respekterer dit privatliv. Du kan altid afmelde dig.
+              </p>
             </div>
           </div>
 
@@ -314,13 +322,16 @@ const Footer = () => {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-blue-400 text-sm transition-colors"
+                      className="text-gray-400 hover:text-blue-400 text-xs transition-colors"
                     >
                       {link.name || link.label}
                     </a>
                   );
                 })}
               </div>
+            </div>
+            <div className="text-center mt-4 text-gray-400 text-xs">
+              © {new Date().getFullYear()} {siteSettings.site_name}. Alle rettigheder forbeholdes.
             </div>
           </div>
         </div>

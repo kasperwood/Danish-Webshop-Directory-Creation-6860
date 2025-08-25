@@ -4,8 +4,6 @@ import AdminLayout from './AdminLayout'
 import Dashboard from './Dashboard'
 import WebshopManager from './WebshopManager'
 import CategoryManager from './CategoryManager'
-import BlogManager from './BlogManager'
-import BlogCategoryManager from './BlogCategoryManager'
 import BulkImport from './BulkImport'
 import Analytics from './Analytics'
 import SiteSettings from './SiteSettings'
@@ -22,10 +20,6 @@ const AdminPanel=()=> {
         return <WebshopManager />
       case 'categories':
         return <CategoryManager />
-      case 'blog':
-        return <BlogManager />
-      case 'blog-categories':
-        return <BlogCategoryManager />
       case 'bulk-import':
         return <BulkImport />
       case 'site-settings':
